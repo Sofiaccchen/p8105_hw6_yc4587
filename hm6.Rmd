@@ -3,6 +3,84 @@ title: "homework 6"
 output: html_document
 date: "2024-11-25"
 ---
+Problem 1
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rnoaa)
+library(broom)
+```
+
+
+```{r load_data}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(id, USW00094728 = "CentralPark_NY"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+)
+
+```{r bootstrap_function}
+bootstrap_fn = function(df) {
+  
+  # 从数据集中进行有放回抽样
+  sample_df = sample_n(df, size = nrow(df), replace = TRUE)
+  
+  # 拟合线性回归模型
+  fit = lm(tmax ~ tmin, data = sample_df)
+  
+  # 提取需要的统计量
+  rsquared = summary(fit)$r.squared
+  beta0 = coef(fit)[1]
+  beta1 = coef(fit)[2]
+  log_product = log(beta0 * beta1)
+  
+  # 返回结果
+  return(tibble(
+    r_squared = rsquared,
+    log_beta_product = log_product
+  ))
+}
+
+set.seed(123)  
+bootstrap_results = 
+  tibble(strap_number = 1:5000) %>%
+  mutate(
+    strap_sample = map(strap_number, ~bootstrap_fn(weather_df))
+  ) %>%
+  unnest(strap_sample)
+
+bootstrap_summary = 
+  bootstrap_results %>%
+  summarize(
+    r_squared_mean = mean(r_squared),
+    r_squared_sd = sd(r_squared),
+    r_squared_ci_lower = quantile(r_squared, 0.025),
+    r_squared_ci_upper = quantile(r_squared, 0.975),
+    log_beta_mean = mean(log_beta_product),
+    log_beta_sd = sd(log_beta_product),
+    log_beta_ci_lower = quantile(log_beta_product, 0.025),
+    log_beta_ci_upper = quantile(log_beta_product, 0.975)
+  )
+
+plot_r_squared = 
+  ggplot(bootstrap_results, aes(x = r_squared)) +
+  geom_density() +
+  labs(
+    title = "Bootstrap Distribution of R-squared",
+    x = "R-squared",
+    y = "Density"
+  )
+
+plot_log_bet
+```
 Problem 2 
 
 ```{r}
