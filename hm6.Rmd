@@ -29,20 +29,15 @@ weather_df =
 
 ```{r bootstrap_function}
 bootstrap_fn = function(df) {
-  
-  # 从数据集中进行有放回抽样
   sample_df = sample_n(df, size = nrow(df), replace = TRUE)
   
-  # 拟合线性回归模型
   fit = lm(tmax ~ tmin, data = sample_df)
-  
-  # 提取需要的统计量
+
   rsquared = summary(fit)$r.squared
   beta0 = coef(fit)[1]
   beta1 = coef(fit)[2]
   log_product = log(beta0 * beta1)
   
-  # 返回结果
   return(tibble(
     r_squared = rsquared,
     log_beta_product = log_product
